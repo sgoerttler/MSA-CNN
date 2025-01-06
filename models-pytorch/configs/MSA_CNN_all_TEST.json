@@ -1,0 +1,102 @@
+{
+  "model": ["MSA_CNN_small","MSA_CNN_large",
+            "MSA_CNN_small_multimodal","MSA_CNN_large_multimodal"],
+  "model_config_MSA_CNN_small": {
+    "out_channels_1": [8],
+    "out_scales": [16],
+    "out_spatial": [32],
+    "embedding_dim": [16],
+    "num_heads": [2],
+    "num_attention_layers": [1]
+  },
+  "model_config_MSA_CNN_large": {
+    "out_channels_1": [8],
+    "out_scales": [32],
+    "out_spatial": [64],
+    "embedding_dim": [32],
+    "num_heads": [4],
+    "num_attention_layers": [2]
+  },
+  "model_config_MSA_CNN_small_multimodal": {
+    "multimodal_conv1": [true],
+    "out_channels_1": [4],
+    "multimodal_conv2": [true],
+    "out_scales": [8],
+    "out_spatial": [32],
+    "embedding_dim": [16],
+    "num_heads": [2],
+    "num_attention_layers": [1]
+  },
+  "model_config_MSA_CNN_large_multimodal": {
+    "multimodal_conv1": [true],
+    "out_channels_1": [4],
+    "multimodal_conv2": [true],
+    "out_scales": [16],
+    "out_spatial": [64],
+    "embedding_dim": [32],
+    "num_heads": [4],
+    "num_attention_layers": [2]
+  },
+  "data": ["ISRUC_univariate","sleep_edf_20_univariate","sleep_edf_78_univariate",
+           "ISRUC","sleep_edf_20","sleep_edf_78"],
+  "data_config_ISRUC": {
+    "classes": 5,
+    "channel_selection": ["EEG/EOG/EMG"],
+    "idx_run": [0,1],
+    "input_scaling": [true],
+    "kernel_spatial": [1]
+  },
+  "data_config_sleep_edf_20": {
+    "classes": 5,
+    "channel_selection": ["EEG/EOG/EMG"],
+    "idx_run": [0,1],
+    "input_scaling": [true],
+    "kernel_spatial": [1]
+  },
+  "data_config_sleep_edf_78": {
+    "classes": 5,
+    "channel_selection": ["EEG/EOG/EMG"],
+    "idx_run": [0,1],
+    "input_scaling": [true],
+    "kernel_spatial": [1]
+  },
+  "data_config_ISRUC_univariate": {
+    "classes": 5,
+    "channel_selection": ["F4-A1"],
+    "idx_run": [0,1],
+    "input_scaling": [false],
+    "kernel_spatial": [5]
+  },
+  "data_config_sleep_edf_20_univariate": {
+    "classes": 5,
+    "channel_selection": ["EEG Fpz-Cz"],
+    "idx_run": [0,1],
+    "input_scaling": [false],
+    "kernel_spatial": [5]
+  },
+  "data_config_sleep_edf_78_univariate": {
+    "classes": 5,
+    "channel_selection": ["EEG Fpz-Cz"],
+    "idx_run": [0,1],
+    "input_scaling": [false],
+    "kernel_spatial": [5]
+  },
+  "num_folds_k": [5],
+  "epochs": [2],
+  "learning_rate": [0.001],
+  "learning_rate_high_level": [0.001],
+  "optimizer": ["Adam"],
+  "scheduler": ["none"],
+  "batch_size": [64],
+  "drop_last_batch": false,
+  "dropout_rate": [0.1],
+  "weight_decay": [0.0001],
+  "length_time_series": ["30s"],
+  "preprocessing": "40Hz_lowpass",
+  "activation_function": ["relu"],
+  "complementary_pooling": ["max"],
+  "num_filter_scales": [4],
+  "kernel_1": [15],
+  "kernel_scales": [5],
+  "pos_encoding": [true]
+}

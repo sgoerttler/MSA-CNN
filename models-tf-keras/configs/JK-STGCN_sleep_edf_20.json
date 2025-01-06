@@ -1,0 +1,10 @@
+{
+  "channels": 4,
+  "path_data": "../data/Sleep_EDF_20/edf_files/",
+  "path_prepared_data": "../data/Sleep_EDF_20/",
+  "path_preprocessed_data": "../data/Sleep_EDF_20/sleep_edf_20.npz",
+  "path_output": "results/JK-STGCN_sleep_edf_20/models/",
+  "path_feature": "results/JK-STGCN_sleep_edf_20/features/",
+  "path_evaluation": "results/JK-STGCN_sleep_edf_20/evaluation/",
+  "num_runs": 10
+}

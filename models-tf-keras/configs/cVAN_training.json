@@ -1,0 +1,12 @@
+{
+  "GPU": "0",
+  "fold": 10,
+  "epoch": 30,
+  "batch_size": 20,
+  "optimizer": "adam",
+  "learn_rate": 0.001,
+  "weight_decay": 0.001,
+  "loss_weight_logit": 1,
+  "loss_weight_sim": 0.5,
+  "evaluation_file": "overview_evaluation.csv"
+}

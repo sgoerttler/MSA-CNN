@@ -1,0 +1,9 @@
+{
+  "vocab_size": 1000,
+  "maxlen": 500,
+  "num_class": 5,
+  "d_model": 64,
+  "num_heads": 2,
+  "num_layers": 3,
+  "ff_dim": 64
+}

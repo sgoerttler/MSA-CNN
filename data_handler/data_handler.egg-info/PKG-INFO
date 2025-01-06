@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: data_handler
+Version: 0.1.0
+Summary: A data handler package for the sleep stage classification project
+Author: Stephan Goerttler
+Author-email: goerttlers@uni.coventry.ac.uk
+Requires-Python: >=3.8
+Requires-Dist: mne==0.20.8
+Requires-Dist: numpy>=1.23.5
+Requires-Dist: scipy==1.14.1
+Requires-Dist: pandas>=2.0.0

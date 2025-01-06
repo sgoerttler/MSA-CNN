@@ -1,0 +1,14 @@
+{
+  "channels": 10,
+  "channels_to_use": ["F3_A2", "C3_A2", "F4_A1", "C4_A1", "O1_A2", "O2_A1", "ROC_A1", "LOC_A2", "X1", "X2"],
+  "exclude_subjects_data": [],
+  "exclude_subjects_label": [],
+  "label_path": "../data/ISRUC/RawData/",
+  "path_data": "../data/ISRUC/ExtractedChannels/",
+  "path_prepared_data": "../data/ISRUC/",
+  "path_preprocessed_data": "../data/ISRUC/ISRUC_S3.npz",
+  "path_output": "results/JK-STGCN_ISRUC/models/",
+  "path_feature": "results/JK-STGCN_ISRUC/features/",
+  "path_evaluation": "results/JK-STGCN_ISRUC/evaluation/",
+  "num_runs": 10
+}

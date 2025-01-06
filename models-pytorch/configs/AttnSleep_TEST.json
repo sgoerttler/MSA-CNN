@@ -1,0 +1,28 @@
+{
+  "model": ["AttnSleep"],
+  "data": ["ISRUC","sleep_edf_20","sleep_edf_78"],
+  "data_config_ISRUC": {
+    "channel_selection": ["F4-A1"]
+  },
+  "data_config_sleep_edf_20": {
+    "channel_selection": ["EEG Fpz-Cz"]
+  },
+  "data_config_sleep_edf_78": {
+    "channel_selection": ["EEG Fpz-Cz"]
+  },
+  "scheduler": ["step_10_epochs"],
+  "model_init": [true],
+  "weight_decay": [0.001],
+  "amsgrad": [true],
+  "criterion": ["weighted_CrossEntropyLoss"],
+  "num_folds_k": 5,
+  "epochs": 2,
+  "learning_rate": [0.001],
+  "batch_size": [128],
+  "dropout_rate": [0.5],
+  "batchnormalization": [true],
+  "length_time_series": ["30s"],
+  "drop_last_batch": false,
+  "optimizer": ["Adam"],
+  "idx_run": [0,1]
+}

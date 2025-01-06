@@ -1,0 +1,21 @@
+{
+  "data": ["ISRUC","sleep_edf_20","sleep_edf_78"],
+  "data_config_ISRUC": {
+    "channel_selection": ["F4-A1","all"]
+  },
+  "data_config_sleep_edf_20": {
+    "channel_selection": ["EEG Fpz-Cz","all"]
+  },
+  "data_config_sleep_edf_78": {
+    "channel_selection": ["EEG Fpz-Cz","all"]
+  },
+  "epochs": [100],
+  "model": ["EEGNet"],
+  "idx_run": [0,1,2,3,4,5,6,7,8,9],
+  "num_folds_k": 10,
+  "learning_rate": [0.001],
+  "batch_size": [32],
+  "length_time_series": ["30s"],
+  "drop_last_batch": false,
+  "optimizer": ["Adam"]
+}

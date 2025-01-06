@@ -1,0 +1,11 @@
+{
+  "Globaldense": [64],
+  "cheb_filters": 64,
+  "time_filters": 64,
+  "time_conv_strides": 1,
+  "time_conv_kernel": 10,
+  "cheb_k": 9,
+  "l1": 0,
+  "l2": 0,
+  "dropout": 0.5
+}

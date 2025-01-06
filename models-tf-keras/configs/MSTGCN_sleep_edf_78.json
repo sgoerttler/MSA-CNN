@@ -1,0 +1,11 @@
+{
+  "channels": 4,
+  "path_data": "../data/Sleep_EDF_78/edf_files/",
+  "path_prepared_data": "../data/Sleep_EDF_78/",
+  "path_preprocessed_data": "../data/Sleep_EDF_78/sleep_edf_78.npz",
+  "path_distance_matrix": "../data/Sleep_EDF_78/distance_matrices/DistanceMatrix_fold_idx_fold.npy",
+  "path_output": "results/MSTGCN_sleep_edf_78/models/",
+  "path_feature": "results/MSTGCN_sleep_edf_78/features/",
+  "path_evaluation": "results/MSTGCN_sleep_edf_78/evaluation/",
+  "num_runs": 3
+}

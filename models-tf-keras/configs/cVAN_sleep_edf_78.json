@@ -1,0 +1,12 @@
+{
+  "channels": 4,
+  "n_length": 50,
+  "path_data": "../data/Sleep_EDF_78/edf_files/",
+  "path_prepared_data": "../data/Sleep_EDF_78/",
+  "path_cheb": "",
+  "path_preprocessed_data": "../data/Sleep_EDF_78/sleep_edf_78_preprocessing_method_label_type.npy",
+  "path_output": "results/cVAN_sleep_edf_78/models/",
+  "path_feature": "results/cVAN_sleep_edf_78/features/",
+  "path_evaluation": "results/cVAN_sleep_edf_78/evaluation/",
+  "num_runs": 3
+}

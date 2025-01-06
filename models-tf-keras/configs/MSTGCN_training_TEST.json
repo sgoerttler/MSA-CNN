@@ -1,0 +1,16 @@
+{
+  "GPU": "3",
+  "fold": 5,
+  "context": 1,
+  "epoch_f": 2,
+  "epoch": 2,
+  "batch_size_f": 32,
+  "batch_size": 32,
+  "optimizer_f": "adam",
+  "optimizer": "adam",
+  "learn_rate_f": 0.0002,
+  "learn_rate": 0.0002,
+  "lambda_GRL": 0.001,
+  "num_runs": 2,
+  "evaluation_file": "overview_evaluation_TEST.csv"
+}

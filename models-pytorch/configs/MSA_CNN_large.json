@@ -1,0 +1,71 @@
+{
+  "model": ["MSA_CNN_large"],
+  "data": ["ISRUC","sleep_edf_20","sleep_edf_78",
+           "ISRUC_univariate","sleep_edf_20_univariate","sleep_edf_78_univariate"],
+  "data_config_ISRUC": {
+    "classes": 5,
+    "channel_selection": ["EEG/EOG/EMG"],
+    "idx_run": [0,1,2,3,4,5,6,7,8,9],
+    "learning_rate_high_level": [0.001],
+    "kernel_spatial": [1]
+  },
+  "data_config_sleep_edf_20": {
+    "classes": 5,
+    "channel_selection": ["EEG/EOG/EMG"],
+    "idx_run": [0,1,2,3,4,5,6,7,8,9],
+    "learning_rate_high_level": [0.001],
+    "kernel_spatial": [1]
+  },
+  "data_config_sleep_edf_78": {
+    "classes": 5,
+    "channel_selection": ["EEG/EOG/EMG"],
+    "idx_run": [0,1,2],
+    "learning_rate_high_level": [0.001],
+    "kernel_spatial": [1]
+  },
+  "data_config_ISRUC_univariate": {
+    "classes": 5,
+    "channel_selection": ["F4-A1"],
+    "idx_run": [0,1,2,3,4,5,6,7,8,9],
+    "learning_rate_high_level": [0.0001],
+    "kernel_spatial": [5]
+  },
+  "data_config_sleep_edf_20_univariate": {
+    "classes": 5,
+    "channel_selection": ["EEG Fpz-Cz"],
+    "idx_run": [0,1,2,3,4,5,6,7,8,9],
+    "learning_rate_high_level": [0.0001],
+    "kernel_spatial": [5]
+  },
+  "data_config_sleep_edf_78_univariate": {
+    "classes": 5,
+    "channel_selection": ["EEG Fpz-Cz"],
+    "idx_run": [0,1,2],
+    "learning_rate_high_level": [0.0001],
+    "kernel_spatial": [5]
+  },
+  "num_folds_k": [10],
+  "epochs": [2],
+  "learning_rate": [0.0001],
+  "optimizer": ["Adam"],
+  "scheduler": ["none"],
+  "batch_size": [64],
+  "drop_last_batch": false,
+  "dropout_rate": [0.1],
+  "weight_decay": [0.0001],
+  "length_time_series": ["30s"],
+  "preprocessing": "40Hz_lowpass",
+  "input_scaling": [true],
+  "activation_function": ["relu"],
+  "complementary_pooling": ["max"],
+  "num_filter_scales": [4],
+  "kernel_1": [15],
+  "out_channels_1": [8],
+  "kernel_scales": [5],
+  "out_scales": [32],
+  "out_spatial": [64],
+  "embedding_dim": [32],
+  "pos_encoding": [true],
+  "num_heads": [4],
+  "num_attention_layers": [2]
+}
