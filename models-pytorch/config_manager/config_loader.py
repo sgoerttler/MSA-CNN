@@ -33,7 +33,7 @@ def config_generator(config_file='config.json'):
     configs_variables_product = list(product(*[enumerate(configs[key]) for key in configs_loop_variables]))
     for config_variables_product_items in configs_variables_product:
         # skip off-diagonal combinations if model and data are paired element-wise
-        if configs['model_data_pairing'] == 'element_wise':
+        if configs.get('model_data_pairing', 'cartesian_product') == 'element_wise':
             if (config_variables_product_items[configs_loop_variables.index('model')][0] !=
                     config_variables_product_items[configs_loop_variables.index('data')][0]):
                 continue

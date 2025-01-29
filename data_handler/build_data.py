@@ -65,7 +65,7 @@ def download_prepare_dataset(dataset, ds_conf=None, save_mode='list'):
 
         # download dataset if not all files in specified folder
         num_recordings = count_files_in_directory(ds_conf['path_data']) // 2
-        if False:#num_recordings < int(dataset_type):
+        if num_recordings < int(dataset_type):
             print(f'Downloading Sleep-EDF-{dataset_type} dataset...')
             download_dataset(dataset)
             print(f'Finished downloading Sleep-EDF-{dataset_type} dataset.\n')
