@@ -61,7 +61,7 @@ def get_num_channels(config):
         elif config['channel_selection'] == 'EEG/EOG/EMG':
             num_channels = 9
         elif config['channel_selection'] in ['C3-A2', 'C4-A1', 'F3-A2', 'F4-A1', 'O1-A2', 'O2-A1',
-                                             'LOC-A2', 'ROC-A1', 'EMG']:
+                                             'LOC-A2', 'ROC-A1', 'chin EMG']:
             num_channels = 1
         else:
             raise ValueError(f'Unknown channel selection: {config["channel_selection"]}')
@@ -70,6 +70,8 @@ def get_num_channels(config):
             num_channels = 6
         elif config['channel_selection'] == 'EEG/EOG/EMG':
             num_channels = 4
+        elif config['channel_selection'] == 'EEG/EOG':
+            num_channels = 3
         elif config['channel_selection'] in ['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG', 'EMG']:
             num_channels = 1
         else:

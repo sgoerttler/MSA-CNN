@@ -35,6 +35,13 @@ def channel_selection(X, config, channel_cardinality_in='reduced'):
                 raise ValueError(f'Unknown channel cardinality: {channel_cardinality_in}')
         else:
             raise ValueError(f'Unknown dataset: {config["data"]}')
+    elif config['channel_selection'] == 'EEG/EOG':
+        if 'ISRUC' in config['data']:
+            idcs_select = [0, 1, 2, 3, 4, 5, 6, 7]
+        elif 'sleep_edf' in config['data']:
+            idcs_select = [0, 1, 2]
+        else:
+            raise ValueError(f'Unknown dataset: {config["data"]}')
     elif config['channel_selection'].isnumeric():
         if 'ISRUC' in config['data']:
             idcs_select = [1, 2, 5, 7, 8, 0, 3, 4, 6, 9][:int(config['channel_selection'])]
@@ -47,12 +54,13 @@ def channel_selection(X, config, channel_cardinality_in='reduced'):
                 raise ValueError(f'Unknown channel cardinality: {channel_cardinality_in}')
         else:
             raise ValueError(f'Unknown dataset: {config["data"]}')
-    elif config['channel_selection'] == 'EEG Fpz-Cz':  # sleep-edf
-        idcs_select = [0]
-    elif config['channel_selection'] == 'C4-A1':  # ISRUC
-        idcs_select = [1]
-    elif config['channel_selection'] == 'F4-A1':  # ISRUC
-        idcs_select = [3]
+    elif config['channel_selection'] in ['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG']:  # sleep-edf
+        idcs_select = [['EEG Fpz-Cz', 'EEG Pz-Oz', 'EOG'].index(config['channel_selection'])]
+        if channel_cardinality_in == 'full' and idcs_select == 2:
+            idcs_select += 1
+    elif config['channel_selection'] in ['C3-A2', 'C4-A1', 'F3-A2', 'F4-A1', 'O1-A2', 'O2-A1', 'LOC-A2', 'ROC-A1', 'chin EMG']:  # ISRUC
+        idcs_select = [['C3-A2', 'C4-A1', 'F3-A2', 'F4-A1', 'O1-A2', 'O2-A1', 'LOC-A2', 'ROC-A1', 'chin EMG']
+                       .index(config['channel_selection'])]
     else:
         raise ValueError(f'Unknown channel selection: {config["channel_selection"]}')
 

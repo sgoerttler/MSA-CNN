@@ -37,31 +37,10 @@
     "num_heads": [4],
     "num_attention_layers": [2]
   },
-  "data": ["sleep_edf_20"],
-  "data_config_ISRUC": {
-    "classes": 5,
-    "channel_selection": ["EEG/EOG/EMG"],
-    "idx_run": [0],
-    "input_scaling": [true],
-    "kernel_spatial": [1]
-  },
-  "data_config_sleep_edf_20": {
-    "classes": 5,
-    "channel_selection": ["EEG/EOG"],
-    "idx_run": [0],
-    "input_scaling": [true],
-    "kernel_spatial": [1]
-  },
-  "data_config_sleep_edf_78": {
-    "classes": 5,
-    "channel_selection": ["EEG/EOG"],
-    "idx_run": [0],
-    "input_scaling": [true],
-    "kernel_spatial": [1]
-  },
+  "data": ["sleep_edf_20_univariate"],
   "data_config_ISRUC_univariate": {
     "classes": 5,
-    "channel_selection": ["F4-A1"],
+    "channel_selection": ["C3-A2","C4-A1","F3-A2","F4-A1","O1-A2","O2-A1","LOC-A2","ROC-A1","chin EMG"],
     "idx_run": [0],
     "input_scaling": [false],
     "kernel_spatial": [5]
@@ -80,8 +59,8 @@
     "input_scaling": [false],
     "kernel_spatial": [5]
   },
-  "num_folds_k": [1],
-  "epochs": [1],
+  "num_folds_k": [10],
+  "epochs": [100],
   "learning_rate": [0.001],
   "learning_rate_high_level": [0.001],
   "optimizer": ["Adam"],
@@ -98,5 +77,5 @@
   "kernel_1": [15],
   "kernel_scales": [5],
   "pos_encoding": [true],
-  "save_model": true
+  "save_model": false
 }

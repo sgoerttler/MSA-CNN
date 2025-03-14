@@ -16,7 +16,6 @@ def download_dataset(dataset):
     if dataset == 'ISRUC':
         check_tool('unrar')
 
-    print(f'Downloading {dataset} dataset...')
     filename = {
         'ISRUC': 'download_isruc_s3',
         'sleep_edf_20': 'download_sleep_edf_20',
