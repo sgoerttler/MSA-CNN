@@ -3,13 +3,15 @@ import argparse
 
 from data_handler.build_data import download_prepare_dataset
 from data_handler.preprocessing.preprocessing import preprocessing_cvan
-from utils.utils import get_num_runs
+from utils.utils import get_num_runs, set_working_directory
 from utils.utils_io import ModelWriter, ReadConfig
 from training.train_cVAN import train_cVAN
 from training.evaluate_cVAN import evaluate_cVAN
 
 
-if __name__ == "__main__":
+def main():
+    set_working_directory()
+
     # allow using custom configuration file when passing it as argument
     parser = argparse.ArgumentParser()
     parser.add_argument("config_training", type=str, default="cVAN_training",
@@ -36,3 +38,7 @@ if __name__ == "__main__":
         for idx_run in range(get_num_runs(train_conf, ds_conf)):
             train_cVAN(idx_run, args.config_training, dataset)
             evaluate_cVAN(model_writer, idx_run, args.config_training, dataset)
+
+
+if __name__ == "__main__":
+    main()

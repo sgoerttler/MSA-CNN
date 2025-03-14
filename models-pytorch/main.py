@@ -17,7 +17,7 @@ from model_setup.criterion import get_criterion
 from evaluation.cross_validation import custom_cv
 from evaluation.model_evaluation import Evaluator, save_model
 
-from utils.utils import print_df
+from utils.utils import print_df, set_working_directory
 from utils.utils_torch import get_device, get_num_model_parameters
 
 
@@ -84,6 +84,8 @@ def run_model(config, overview_writer, epoch_writer, device, verbose):
 
 
 def main():
+    set_working_directory()
+
     args = get_experiment_args()
     if args['gpu'] >= 0:
         os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu

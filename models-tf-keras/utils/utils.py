@@ -1,7 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import sklearn.metrics as metrics
-import json
 import tensorflow as tf
 import tensorflow.keras as keras
 from tensorflow.python.profiler import model_analyzer, option_builder
@@ -160,3 +157,8 @@ def get_num_runs(training_config, dataset_config):
     else:
         raise ValueError('Number of runs not found in training or dataset configuration file.')
 
+
+def set_working_directory():
+    cwd = os.getcwd()
+    if 'models-tf-keras' not in cwd:
+        os.chdir('models-tf-keras')

@@ -1,7 +1,7 @@
 import argparse
 
 from data_handler.build_data import download_prepare_dataset
-from utils.utils import get_num_runs
+from utils.utils import get_num_runs, set_working_directory
 from utils.utils_io import ModelWriter, ReadConfig
 from training.train_FeatureNet import train_FeatureNet
 from training.train_JKSTGCN import train_JK_STGCN
@@ -9,6 +9,8 @@ from training.evaluate_JKSTGCN import evaluate_JK_STGCN
 
 
 def main():
+    set_working_directory()
+
     # allow using custom configuration file when passing it as argument
     parser = argparse.ArgumentParser()
     parser.add_argument("config_training", type=str, default="cVAN_training",
@@ -32,4 +34,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

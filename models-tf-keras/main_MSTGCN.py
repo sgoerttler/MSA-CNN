@@ -3,7 +3,7 @@ import argparse
 
 from data_handler.build_data import download_prepare_dataset
 from data_handler.preprocessing.compute_distance_matrix import compute_distance_matrix
-from utils.utils import get_num_runs
+from utils.utils import get_num_runs, set_working_directory
 from utils.utils_io import ModelWriter, ReadConfig
 from training.train_FeatureNet import train_FeatureNet
 from training.train_MSTGCN import train_MSTGCN
@@ -11,6 +11,8 @@ from training.evaluate_MSTGCN import evaluate_MSTGCN
 
 
 def main():
+    set_working_directory()
+
     # allow using custom configuration file when passing it as argument
     parser = argparse.ArgumentParser()
     parser.add_argument("config_training", type=str, default="cVAN_training",

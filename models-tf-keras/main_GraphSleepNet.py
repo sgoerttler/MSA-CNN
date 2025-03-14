@@ -3,13 +3,15 @@ import argparse
 
 from data_handler.build_data import download_prepare_dataset
 from data_handler.preprocessing.preprocessing import preprocessing_graphsleepnet
-from utils.utils import get_num_runs
+from utils.utils import get_num_runs, set_working_directory
 from utils.utils_io import ModelWriter, ReadConfig
 from training.train_GraphSleepNet import train_GraphSleepNet
 from training.evaluate_GraphSleepNet import evaluate_GraphSleepNet
 
 
 def main():
+    set_working_directory()
+
     # allow using custom configuration file when passing it as argument
     parser = argparse.ArgumentParser()
     parser.add_argument("config_training", type=str, default="cVAN_training",
