@@ -20,6 +20,20 @@ The repository includes:
 This repository contains two subprojects, one for PyTorch models and one for TensorFlow-Keras models.
 The dependencies have to be installed separately for each subproject. 
 
+### **Command-Line Tools:**
+The following command-line tools are required for the automated dataset download provided in this project:
+- `wget`
+- `unrar`
+
+Alternatively, you can manually download the datasets and organize them in the following directories:
+- ISRUC-S3 Dataset
+  - Extract `.rar` files into `data/ISRUC/RawData/`.
+  - Place the `.mat` files in `data/ISRUC/ExtractedChannels/`.
+
+- Sleep-EDF Datasets
+  - For Sleep-EDF-20, place all `-PSG.edf` and `-Hypnogram.edf` files in `data/Sleep_EDF_20/edf_files/`.
+  - For Sleep-EDF-78, place the corresponding files in `data/Sleep_EDF_78/edf_files/`.
+
 ### **Python Dependencies:**  
 Install the necessary Python packages by navigating to either the `models-pytorch` or `models-tf-keras` directory and executing:
 ```bash
