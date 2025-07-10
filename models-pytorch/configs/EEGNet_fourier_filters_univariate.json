@@ -1,0 +1,22 @@
+{
+  "data": ["ISRUC", "sleep_edf_20"],
+  "classes": 5,
+  "data_config_ISRUC": {
+    "channel_selection": ["C3-A2","C4-A1","F3-A2","F4-A1","O1-A2","O2-A1","LOC-A2","ROC-A1","chin EMG"]
+  },
+  "data_config_sleep_edf_20": {
+    "channel_selection": ["EEG Fpz-Cz","EEG Pz-Oz","EOG"]
+  },
+  "data_config_sleep_edf_78": {
+    "channel_selection": ["EEG Fpz-Cz","all"]
+  },
+  "epochs": [100],
+  "model": ["EEGNet"],
+  "idx_run": [0],
+  "num_folds_k": 10,
+  "learning_rate": [0.001],
+  "batch_size": [32],
+  "length_time_series": ["30s"],
+  "drop_last_batch": false,
+  "optimizer": ["Adam"]
+}
