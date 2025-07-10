@@ -13,11 +13,12 @@ from data_handler.utils import onehot_to_unique
 from data_io.loader import read_data
 from data_io.preprocessor import channel_selection, do_filtering
 from models.MSA_CNN import MSA_CNN
+from models.EEGNet import EEGNet
 from utils.utils import add_legend, transparent_to_opaque
 
 
 class DataProcessingFilterSpectra(object):
-    """This class is used to process the data for the filter spectra analysis based on the trained MSA-CNN model."""
+    """This class is used to process the data for the filter spectra analysis based on the trained models."""
 
     def __init__(self, config, state_dict):
         self.config = config
@@ -25,15 +26,19 @@ class DataProcessingFilterSpectra(object):
 
         # load trained MSA_CNN model
         self.config['num_channels'] = get_num_channels(self.config)
-        self.config['return_msm_conv1'] = True
-        self.msa_cnn = MSA_CNN(self.config)
-        for idx_scale in range(self.config['num_filter_scales']):
-            self.state_dict[f'msm.multi_scale_convolution.convs1.{idx_scale}.bias'] *= 0
-        self.msa_cnn.load_state_dict(self.state_dict)
-        self.msa_cnn.eval()
+        self.config['return_conv1'] = True
 
-        # set return_msm_conv1 to True to get the first convolutional layer of the MSA_CNN model
-        self.msa_cnn.config['return_msm_conv1'] = True
+        if 'MSA_CNN' in self.config['model']:
+            self.model = MSA_CNN(self.config)
+            for idx_scale in range(self.config['num_filter_scales']):
+                self.state_dict[f'msm.multi_scale_convolution.convs1.{idx_scale}.bias'] *= 0
+        elif self.config['model'] == 'EEGNet':
+            self.model = EEGNet(self.config)
+        self.model.load_state_dict(self.state_dict)
+        self.model.eval()
+
+        # set return_conv1 to True to get the first convolutional layer of the model
+        self.model.config['return_conv1'] = True
 
         self.S_aggr = self.get_S_aggr(var_type='numpy')
         self.filter_spectra = self.get_individual_filter_spectra(var_type='numpy')
@@ -67,17 +72,29 @@ class DataProcessingFilterSpectra(object):
         return filter_spectra_aggr
 
     def get_individual_filter_spectra(self, var_type='numpy'):
-        len_fft_filter = self.state_dict['msm.multi_scale_convolution.convs1.0.weight'].shape[-1] // 2 + 1
-        filter_spectra = np.zeros(len_fft_filter * self.config['num_filter_scales'])
+        if 'MSA_CNN' in self.config['model']:
+            len_fft_filter = self.state_dict['msm.multi_scale_convolution.convs1.0.weight'].shape[-1] // 2 + 1
+            filter_spectra = np.zeros(len_fft_filter * self.config['num_filter_scales'])
 
-        for idx_scale in range(self.config['num_filter_scales']):
-            weights = self.state_dict[f'msm.multi_scale_convolution.convs1.{idx_scale}.weight']
-            weights = weights.cpu().numpy().squeeze()  # filter_pos x time (8 x 15)
+            for idx_scale in range(self.config['num_filter_scales']):
+                weights = self.state_dict[f'msm.multi_scale_convolution.convs1.{idx_scale}.weight']
+                weights = weights.cpu().numpy().squeeze()  # filter_pos x time (8 x 15)
 
-            filter_y = np.fft.fft(weights, axis=1)[:, :len_fft_filter].T  # freq x filter_pos (8 x 8)
+                filter_y = np.fft.fft(weights, axis=1)[:, :len_fft_filter].T  # freq x filter_pos (8 x 8)
+                filter_y = np.abs(filter_y)
+
+                filter_spectra[idx_scale * len_fft_filter:(idx_scale + 1) * len_fft_filter] = np.mean(filter_y, axis=1)
+        elif self.config['model'] == 'EEGNet':
+            len_fft_filter = self.state_dict['conv1.weight'].shape[-1] // 2
+            filter_spectra = np.zeros(len_fft_filter)
+
+            weights = self.state_dict[f'conv1.weight']
+            weights = weights.cpu().numpy().squeeze()  # filter_pos x time (8 x 50)
+
+            filter_y = np.fft.fft(weights, axis=1)[:, :len_fft_filter].T  # freq x filter_pos (25 x 8)
             filter_y = np.abs(filter_y)
 
-            filter_spectra[idx_scale * len_fft_filter:(idx_scale + 1) * len_fft_filter] = np.mean(filter_y, axis=1)
+            filter_spectra[:len_fft_filter] = np.mean(filter_y, axis=1)
 
         if var_type == 'torch_tensor':
             filter_spectra = torch.tensor(filter_spectra, dtype=torch.float32)
@@ -107,14 +124,22 @@ class DataProcessingFilterSpectra(object):
         return dev_freqs, class_deviations
 
     def get_filter_freqs(self, sampling_freq=100, return_all=False):
-        for idx_scale in range(self.config['num_filter_scales']):
-            xf = np.fft.fftfreq(self.config['kernel_1'], 1 / (sampling_freq / (2 ** idx_scale)))
-            len_fft_filter = self.config['kernel_1'] // 2 + 1
+        if 'MSA_CNN' in self.config['model']:
+            for idx_scale in range(self.config['num_filter_scales']):
+                xf = np.fft.fftfreq(self.config['kernel_1'], 1 / (sampling_freq / (2 ** idx_scale)))
+                len_fft_filter = self.config['kernel_1'] // 2 + 1
 
-            if idx_scale == 0:
-                filter_freqs_all = xf[:len_fft_filter]
-            else:
-                filter_freqs_all = np.hstack((filter_freqs_all, xf[:len_fft_filter]))
+                if idx_scale == 0:
+                    filter_freqs_all = xf[:len_fft_filter]
+                else:
+                    filter_freqs_all = np.hstack((filter_freqs_all, xf[:len_fft_filter]))
+
+        elif self.config['model'] == 'EEGNet':
+            xf = np.fft.fftfreq(50, 1 / sampling_freq)
+            len_fft_filter = 50 // 2
+
+            filter_freqs_all = xf[:len_fft_filter]
+
         if return_all:
             return np.sort(np.unique(filter_freqs_all)), filter_freqs_all
         return np.sort(np.unique(filter_freqs_all))
@@ -123,14 +148,16 @@ class DataProcessingFilterSpectra(object):
         idcs_matching = self.get_idcs_matching(filter_freqs, dev_freqs)
         corrs = np.zeros((self.config['num_channels']))
 
+        # Use inverted S_aggr to compute correlations with correct weighting
         if isinstance(S_aggr, torch.Tensor):
             S_aggr_copy = S_aggr.clone()
         else:
             S_aggr_copy = S_aggr.copy()
         S_aggr_copy[S_aggr_copy > 0] = 1
         for idx_channel in range(self.config['num_channels']):
-            corrs[idx_channel] = np.corrcoef(S_aggr_copy.T @ filter_spectra,
-                                               S_aggr_copy.T @ class_deviations[idx_channel, idcs_matching])[0, 1]
+            corrs[idx_channel] = np.corrcoef(((S_aggr_copy.T @ filter_spectra)[S_aggr_copy.T @ filter_freqs <= 12]),
+                                             ((S_aggr_copy.T @ class_deviations[idx_channel, idcs_matching])[
+                                                 S_aggr_copy.T @ filter_freqs <= 12]))[0, 1]
         return corrs
 
     @staticmethod
@@ -147,39 +174,50 @@ class PlottingFilterSpectra(object):
     """This class is used to plot the filter spectra and the between-class variances for the ISRUC-S3 and Sleep-EDF-20
     datasets."""
 
-    def __init__(self):
+    def __init__(self, model_name):
+        self.model_name = None
+        self.idx_model = None
+        self.set_model_name(model_name)
         self.datasets = ['ISRUC', 'sleep_edf_20']
         self.dataset_labels = {'ISRUC': 'ISRUC-S3', 'sleep_edf_20': 'Sleep-EDF-20'}
         self.color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-        self.fig, self.axs = plt.subplots(2, 1, figsize=(6.4, 5.5), gridspec_kw={'hspace': 0.08})
+        self.fig, self.axs = plt.subplots(2, 2, figsize=(12, 5.5), gridspec_kw={'hspace': 0.1, 'wspace': 0.1}, )
         self.figure_formatting()
+
+    def set_model_name(self, model_name):
+        self.model_name = model_name
+        self.idx_model = ['MSA_CNN', 'EEGNet'].index(model_name)
 
     def figure_formatting(self):
         props = dict(facecolor=transparent_to_opaque('slategrey', alpha=0.025), boxstyle='round,pad=0.4')
 
-        self.axs[0].set_xticklabels([])
-        self.axs[1].set_xlabel('frequency (Hz)')
-
         for idx_ds in range(2):
-            self.axs[idx_ds].set_ylabel('rescaled spectrum')
-            self.axs[idx_ds].spines[['right', 'top']].set_visible(False)
+            self.axs[1, idx_ds].set_xlabel('frequency (Hz)')
+            for idx_model, model_name in enumerate(['MSA-CNN', 'EEGNet']):
+                self.axs[0, idx_ds].set_xticklabels([])
+                if idx_ds == 0:
+                    self.axs[idx_model, idx_ds].set_ylabel('rescaled spectrum')
+                elif idx_ds == 1:
+                    self.axs[idx_model, idx_ds].set_yticklabels([])
 
-            self.axs[idx_ds].text(0.5, 0.90, self.dataset_labels[self.datasets[idx_ds]], ha='center', va='center',
-                                  transform=self.axs[idx_ds].transAxes, bbox=props)
+                self.axs[idx_model, idx_ds].text(0.5, 0.90, model_name, ha='center', va='center',
+                                                 transform=self.axs[idx_model, idx_ds].transAxes, bbox=props)
 
         legend_colors = ['tab:blue', 'tab:blue', transparent_to_opaque('darkviolet', 0.1)]
         legend_ls = ['-', '--', '']
-        legend_labels = ['filter spectrum', 'betw.-class var.', 'F3-A2']
-        add_legend(legend_colors, legend_ls, legend_labels, self.axs[0], loc='upper left', bbox_to_anchor=(0.025, 1))
-        add_legend(legend_colors, legend_ls, legend_labels, self.axs[1], loc='upper left', bbox_to_anchor=(0.025, 1))
+        add_legend(legend_colors, legend_ls, ['filter spectrum', 'betw.-class var.', 'F3-A2'],
+                   self.axs[0, 0], loc='upper left', bbox_to_anchor=(0.025, 1))
+        add_legend(legend_colors, legend_ls, ['filter spectrum', 'betw.-class var.', 'Fpz-Cz'],
+                   self.axs[0, 1], loc='upper left', bbox_to_anchor=(0.025, 1))
 
-    def plot_dataset(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations):
-        self.plot_filter_spectra(idx_ds, filter_freqs, filter_spectra, freqs, class_deviations)
+    def plot_dataset(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr):
+        self.plot_filter_spectra(idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr)
         self.plot_eeg_waves(max(filter_freqs))
         self.set_limits(idx_ds, max(filter_freqs))
+        self.set_titles(idx_ds)
 
-    def plot_filter_spectra(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations):
+    def plot_filter_spectra(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr):
         if idx_ds == 0:
             idcs_color = [0, 0, 0, 0, 1, 1, 3, 3, 2]
             idx_channel = 2
@@ -187,56 +225,81 @@ class PlottingFilterSpectra(object):
             idcs_color = [0, 1, 3, 2]
             idx_channel = 0
 
-        self.axs[idx_ds].plot(filter_freqs, filter_spectra / np.mean(filter_spectra),
-                                 color=self.color_cycle[idcs_color[0]], linestyle='-')
+        if isinstance(S_aggr, torch.Tensor):
+            S_aggr_copy = S_aggr.clone()
+        else:
+            S_aggr_copy = S_aggr.copy()
+        S_aggr_copy[S_aggr_copy > 0] = 1
+
+        self.axs[self.idx_model, idx_ds].plot(filter_freqs, filter_spectra / np.mean(
+            (S_aggr_copy.T @ filter_spectra)[(S_aggr_copy.T @ filter_freqs) <= 12]),
+                                              color=self.color_cycle[idcs_color[0]], linestyle='-')
         mask_freqs = (freqs >= min(filter_freqs)) & (freqs <= max(filter_freqs))
-        self.axs[idx_ds].plot(freqs[mask_freqs], class_deviations[idx_channel, :][mask_freqs] / np.mean(class_deviations[idx_channel, :][mask_freqs]),
-                                 color=self.color_cycle[idcs_color[0]], linestyle='--')
+        mask_freqs_low_freq = (freqs >= min(filter_freqs)) & (freqs <= 12)
+        self.axs[self.idx_model, idx_ds].plot(freqs[mask_freqs], class_deviations[idx_channel, :][mask_freqs] / np.mean(
+            class_deviations[idx_channel, :][mask_freqs_low_freq]),
+                                              color=self.color_cycle[idcs_color[0]], linestyle='--')
 
     def plot_eeg_waves(self, max_filter_freqs):
         for idx_ds in range(2):
-            self.axs[idx_ds].axvspan(0.5, 4, ymin=-0.1, ymax=9, facecolor='darkviolet', alpha=0.1, label='Delta', edgecolor='grey')
-            self.axs[idx_ds].axvspan(4, 8, ymin=-0.1, ymax=9, facecolor='cornflowerblue', alpha=0.1, label='Theta', edgecolor='none')
-            self.axs[idx_ds].axvspan(8, 12, ymin=-0.1, ymax=9, facecolor='forestgreen', alpha=0.1, label='Alpha', edgecolor='grey')
-            self.axs[idx_ds].axvspan(12, 30, ymin=-0.1, ymax=9, facecolor='orange', alpha=0.1, label='Beta', edgecolor='none')
-            self.axs[idx_ds].axvspan(30, max_filter_freqs-0.1, ymin=-0.1, ymax=9, facecolor='tomato', alpha=0.1, label='Gamma', edgecolor='grey')
+            self.axs[self.idx_model, idx_ds].axvspan(0.5, 4, ymin=-0.1, ymax=9, facecolor='darkviolet', alpha=0.05,
+                                                     label='Delta', edgecolor='grey')
+            self.axs[self.idx_model, idx_ds].axvspan(4, 8, ymin=-0.1, ymax=9, facecolor='cornflowerblue', alpha=0.05,
+                                                     label='Theta', edgecolor='none')
+            self.axs[self.idx_model, idx_ds].axvspan(8, 12, ymin=-0.1, ymax=9, facecolor='forestgreen', alpha=0.05,
+                                                     label='Alpha', edgecolor='grey')
+            self.axs[self.idx_model, idx_ds].axvspan(12, 30, ymin=-0.1, ymax=9, facecolor='orange', alpha=0.05,
+                                                     label='Beta', edgecolor='none')
+            self.axs[self.idx_model, idx_ds].axvspan(30, max_filter_freqs - 0.1, ymin=-0.1, ymax=9, facecolor='tomato',
+                                                     alpha=0.05, label='Gamma', edgecolor='grey')
 
-            self.axs[idx_ds].text(0.5 + (4 - 0.5) / 2, 0.15, 'δ', color='darkviolet', ha='center', va='center')
-            self.axs[idx_ds].text(4 + (8 - 4) / 2, 0.15, 'θ', color='cornflowerblue', ha='center', va='center')
-            self.axs[idx_ds].text(8 + (12 - 8) / 2, 0.15, 'α', color='forestgreen', ha='center', va='center')
-            self.axs[idx_ds].text(12 + (30 - 12) / 2, 0.15, 'β', color='orange', ha='center', va='center')
-            self.axs[idx_ds].text(30 + (max_filter_freqs - 30) / 2, 0.15, 'γ', color='tomato', ha='center', va='center')
+            self.axs[self.idx_model, idx_ds].text(0.5 + (4 - 0.5) / 2, 0.15, 'δ', color='darkviolet', ha='center',
+                                                  va='center')
+            self.axs[self.idx_model, idx_ds].text(4 + (8 - 4) / 2, 0.15, 'θ', color='cornflowerblue', ha='center',
+                                                  va='center')
+            self.axs[self.idx_model, idx_ds].text(8 + (12 - 8) / 2, 0.15, 'α', color='forestgreen', ha='center',
+                                                  va='center')
+            self.axs[self.idx_model, idx_ds].text(12 + (30 - 12) / 2, 0.15, 'β', color='orange', ha='center',
+                                                  va='center')
+            self.axs[self.idx_model, idx_ds].text(30 + (max_filter_freqs - 30) / 2, 0.15, 'γ', color='tomato',
+                                                  ha='center', va='center')
 
     def set_limits(self, idx_ds, max_filter_freqs):
-        self.axs[idx_ds].set_xlim([0, max_filter_freqs])
-        self.axs[idx_ds].set_ylim([0, 2.15])
+        self.axs[self.idx_model, idx_ds].set_xlim([0, max_filter_freqs])
+        self.axs[self.idx_model, idx_ds].set_ylim([0, 2.75])
 
-        self.axs[idx_ds].set_yticks([0, 0.5, 1, 1.5, 2])
+    def set_titles(self, idx_ds):
+        self.axs[0, idx_ds].set_title(['ISRUC-S3', 'Sleep-EDF-20'][idx_ds], fontsize=10)
 
     def save(self, save_directory='figures/scale_analysis/'):
         plt.rcParams['pdf.fonttype'] = 42
         Path(save_directory).mkdir(parents=True, exist_ok=True)
-        self.fig.savefig(f'{save_directory}filter_spectra.pdf', bbox_inches='tight', pad_inches=0.0)
+        self.fig.savefig(f'{save_directory}{self.model_name}_filter_spectra.pdf', bbox_inches='tight', pad_inches=0.0)
 
 
 class PlottingCorrelationsPerformances(object):
     """This class is used to plot the correlations between the filter spectra and the between-class variances and
     compare them to the univariate classification performances, which are read from the overview file."""
 
-    def __init__(self, file_name_overview_univariate, dir_results='results', dir_overview='overview'):
-        self.file_path = os.path.join(dir_results, dir_overview, file_name_overview_univariate)
+    def __init__(self, model_name, file_name_overview_univariate, dir_results='results', dir_overview='overview'):
+        self.model_name = model_name
+        self.dir_results = dir_results
+        self.dir_overview = dir_overview
+        self.file_path = self.get_file_path(file_name_overview_univariate)
         self.datasets = ['ISRUC', 'sleep_edf_20']
         self.dataset_labels = {'ISRUC': 'ISRUC-S3', 'sleep_edf_20': 'Sleep-EDF-20'}
         self.x_labels, self.x_label_mapping, self.idcs_rearrange_ISRUC = self.get_x_labels()
 
-        self.marker_o_s = 40
+        self.marker_o_s = {'o': 30, 's': 20, '*': 50}
         self.idcs_color = {'ISRUC': [0, 0, 0, 0, 1, 1, 3, 3, 2], 'sleep_edf_20': [0, 1, 3, 2]}
         self.color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
         self.color_cycle[1] = transparent_to_opaque(self.color_cycle[0], 0.7)
 
         self.fig, self.axs = self.get_figure()
         self.set_figure_formatting()
-        self.set_broken_axis()
+
+    def get_file_path(self, file_name_overview_univariate):
+        return os.path.join(self.dir_results, self.dir_overview, file_name_overview_univariate)
 
     def get_figure(self):
         width_ratio = 1.9
@@ -248,7 +311,7 @@ class PlottingCorrelationsPerformances(object):
         return fig, axs
 
     def set_figure_formatting(self):
-        self.axs[0, 0].text(-0.21, 0.5, 'Pearson corr. filter spectrum\nvs between-class var.',
+        self.axs[0, 0].text(-0.21, 0.5, 'correlation (filter spectrum\nvs between-class variation)',
                             va='center', ha='center', rotation='vertical', transform=self.axs[0, 0].transAxes)
         self.axs[1, 0].text(-0.21, 0.5, 'performance\n(classification acc.)',
                             va='center', ha='center', rotation='vertical', transform=self.axs[1, 0].transAxes)
@@ -259,62 +322,73 @@ class PlottingCorrelationsPerformances(object):
             self.axs[1, idx_ds].spines[['right', 'top']].set_visible(False)
 
             self.set_ticks(idx_ds)
+            self.set_titles(idx_ds)
 
-    def set_broken_axis(self):
-        y_cent = 2 / 4.5
-        self.axs[1, 0].plot([0.0, 0.0], [y_cent - 0.008, y_cent + 0.008],
-                            transform=self.axs[1, 0].transAxes, color='white', linewidth=1.5, clip_on=False, zorder=50)
-        self.axs[1, 0].plot([-0.03, 0.03], [y_cent - 0.02, y_cent],
-                            transform=self.axs[1, 0].transAxes, color='k', linewidth=1, clip_on=False, zorder=100)
-        self.axs[1, 0].plot([-0.03, 0.03], [y_cent, y_cent + 0.02],
-                            transform=self.axs[1, 0].transAxes, color='k', linewidth=1, clip_on=False, zorder=100)
+        legend_ls = ['o', '*']
+        add_legend(['grey', 'grey'], legend_ls, ['MSA-CNN', 'EEGNet'], self.axs[0, 0],
+                   loc='lower left', s=[self.marker_o_s[ls_i] for ls_i in legend_ls])
 
     def plot_dataset(self, idx_ds, corrs_i):
         self.plot_correlations(idx_ds, corrs_i)
         self.plot_performance(idx_ds, corrs_i)
 
     def plot_correlations(self, idx_ds, corrs_i):
+        if self.model_name == 'MSA_CNN':
+            marker = 'o'
+        elif self.model_name == 'EEGNet':
+            marker = '*'
         if idx_ds == 0:
             corrs_i_rearr = corrs_i[self.idcs_rearrange_ISRUC]
-            self.axs[0, 0].scatter(np.arange(4), corrs_i_rearr[:4], color=self.color_cycle[0], marker='o', s=self.marker_o_s)
-            self.axs[0, 0].scatter(np.arange(4, 6), corrs_i_rearr[4:6], color=self.color_cycle[1], marker='o', s=self.marker_o_s)
-            self.axs[0, 0].scatter(np.arange(6, 8), corrs_i_rearr[6:8], color=self.color_cycle[3], marker='o', s=self.marker_o_s)
-            self.axs[0, 0].scatter([8], [corrs_i_rearr[8]], color=self.color_cycle[2], marker='o', s=self.marker_o_s)
+            self.axs[0, 0].scatter(np.arange(4), corrs_i_rearr[:4], color=self.color_cycle[0], marker=marker,
+                                   s=self.marker_o_s[marker])
+            self.axs[0, 0].scatter(np.arange(4, 6), corrs_i_rearr[4:6], color=self.color_cycle[1], marker=marker,
+                                   s=self.marker_o_s[marker])
+            self.axs[0, 0].scatter(np.arange(6, 8), corrs_i_rearr[6:8], color=self.color_cycle[3], marker=marker,
+                                   s=self.marker_o_s[marker])
+            self.axs[0, 0].scatter([8], [corrs_i_rearr[8]], color=self.color_cycle[2], marker=marker,
+                                   s=self.marker_o_s[marker])
             self.axs[0, 0].plot(corrs_i_rearr[:4], color=self.color_cycle[0])
             self.axs[0, 0].plot(np.arange(4, 6), corrs_i_rearr[4:6], color=self.color_cycle[1])
             self.axs[0, 0].plot(np.arange(6, 8), corrs_i_rearr[6:8], color=self.color_cycle[3])
         elif idx_ds == 1:
             for idx_channel, corr_i in enumerate(corrs_i):
                 self.axs[0, 1].scatter(idx_channel, corr_i,
-                                       color=self.color_cycle[self.idcs_color['sleep_edf_20'][idx_channel]], marker='o',
-                                       s=self.marker_o_s)
+                                       color=self.color_cycle[self.idcs_color['sleep_edf_20'][idx_channel]],
+                                       marker=marker,
+                                       s=self.marker_o_s[marker])
 
         self.set_plot_elements(idx_ds, corrs_i)
 
     def plot_performance(self, idx_ds, corrs_i):
-        df_univariate = pd.read_csv(self.file_path)
+        if self.model_name == 'MSA_CNN':
+            marker = 'o'
+        elif self.model_name == 'EEGNet':
+            marker = '*'
+
+        df_univariate = pd.read_csv(self.file_path, index_col=0)
+        if df_univariate['model'].iloc[-1] == 'EEGNet':
+            df_univariate = df_univariate[df_univariate['idx_experiment'] == 3]
+        print(df_univariate.to_string())
+
         y_values = self.get_y_values(df_univariate, self.x_labels[self.datasets[idx_ds]], break_loc=[0.7, None][idx_ds],
                                      break_shift=[0.15, None][idx_ds])
 
         for idx_channel, y_value in enumerate(y_values):
-            self.axs[1, idx_ds].scatter(idx_channel, y_value, color=self.color_cycle[self.idcs_color[self.datasets[idx_ds]][idx_channel]],
-                                        marker='o', s=self.marker_o_s)
+            self.axs[1, idx_ds].scatter(idx_channel, y_value,
+                                        color=self.color_cycle[self.idcs_color[self.datasets[idx_ds]][idx_channel]],
+                                        marker=marker, s=self.marker_o_s[marker])
 
         if idx_ds == 0:
             self.axs[1, 0].plot(y_values[:4],
-                                  color=self.color_cycle[0])
+                                color=self.color_cycle[0])
             self.axs[1, 0].plot(np.arange(4, 6), y_values[4:6],
-                                  color=self.color_cycle[1])
+                                color=self.color_cycle[1])
             self.axs[1, 0].plot(np.arange(6, 8), y_values[6:8],
-                                  color=self.color_cycle[3])
+                                color=self.color_cycle[3])
 
         self.set_limits(idx_ds, corrs_i)
 
     def set_plot_elements(self, idx_ds, corrs_i):
-        props = dict(facecolor=transparent_to_opaque('slategrey', alpha=0.025), boxstyle='round,pad=0.4')
-        self.axs[0, idx_ds].text(0.5, 0.94, self.dataset_labels[self.datasets[idx_ds]], ha='center', va='center',
-                                 transform=self.axs[0, idx_ds].transAxes, bbox=props)
-
         self.axs[0, idx_ds].hlines(0, -1, len(corrs_i) + 1, color='grey', linestyle='--')
 
     def get_y_values(self, df_univariate, x_labels, break_loc=None, break_shift=None):
@@ -330,17 +404,18 @@ class PlottingCorrelationsPerformances(object):
 
     def set_limits(self, idx_ds, corrs_i):
         self.axs[0, idx_ds].set_xlim([0 - 0.4, len(corrs_i) - 1 + 0.4])
-        self.axs[0, idx_ds].set_ylim([-0.35, 1])
+        self.axs[0, idx_ds].set_ylim([-0.65, 1])
         self.axs[1, idx_ds].set_xlim([0 - 0.4, len(corrs_i) - 1 + 0.4])
         if idx_ds == 0:
-            ylim = [0.575, 0.8]
+            ylim = [0.5, 0.85]
         elif idx_ds == 1:
-            ylim = [0.745, 0.83]
+            ylim = [0.5, 0.85]
         self.axs[1, idx_ds].set_ylim(ylim)
 
     def set_ticks(self, idx_ds):
         if idx_ds == 1:
             self.axs[0, idx_ds].set_yticklabels([])
+            self.axs[1, idx_ds].set_yticklabels([])
             self.axs[1, idx_ds].set_xticklabels([])
 
         xticks = np.arange(len(self.x_labels[self.datasets[idx_ds]]))
@@ -349,15 +424,16 @@ class PlottingCorrelationsPerformances(object):
 
         for tick, label in zip(xticks, self.x_labels[self.datasets[idx_ds]]):
             self.axs[1, idx_ds].text(tick + 0.03, -0.02, label, ha='right', va='top', rotation=30,
-                                  transform=self.axs[1, idx_ds].get_xaxis_transform())
+                                     transform=self.axs[1, idx_ds].get_xaxis_transform())
 
-        # set y-ticks manually for broken axis
-        self.axs[1, 0].set_yticks([0.6, 0.65, 0.7, 0.75, 0.8], ['0.45', '0.5', '0.7', '0.75', '0.8'])
+    def set_titles(self, idx_ds):
+        self.axs[0, idx_ds].set_title(['ISRUC-S3', 'Sleep-EDF-20'][idx_ds], fontsize=10)
 
     def save(self, save_directory='figures/scale_analysis/'):
         plt.rcParams['pdf.fonttype'] = 42
         Path(save_directory).mkdir(parents=True, exist_ok=True)
-        self.fig.savefig(f'{save_directory}correlation_datasets.pdf', bbox_inches='tight', pad_inches=0.0)
+        self.fig.savefig(f'{save_directory}{self.model_name}_correlation_datasets.pdf', bbox_inches='tight',
+                         pad_inches=0.0)
 
     @staticmethod
     def get_x_labels():
@@ -378,9 +454,14 @@ class PlottingCorrelationsPerformances(object):
 
 def get_analysis_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_ISRUC", type=str)
-    parser.add_argument("--model_sleep_edf_20", type=str)
-    parser.add_argument("--file_name_overview_univariate", type=str)
+    parser.add_argument("--model_name_1", type=str)
+    parser.add_argument("--model_1_ISRUC", type=str)
+    parser.add_argument("--model_1_sleep_edf_20", type=str)
+    parser.add_argument("--file_name_overview_univariate_1", type=str)
+    parser.add_argument("--model_name_2", type=str, default="none")
+    parser.add_argument("--model_2_ISRUC", type=str, default="none")
+    parser.add_argument("--model_2_sleep_edf_20", type=str, default="none")
+    parser.add_argument("--file_name_overview_univariate_2", type=str, default="none")
     parser.add_argument("--results_folder", type=str, default="results")
     parser.add_argument("--overview_folder", type=str, default="overview")
     parser.add_argument("--models_folder", type=str, default="models")
@@ -388,25 +469,33 @@ def get_analysis_args():
     return vars(args)
 
 
-def main_analysis_filters(args=None):
+def main_analysis_filters(model_name=None, model_ISRUC=None, model_sleep_edf_20=None,
+                          file_name_overview_univariate=None,
+                          results_folder=None, models_folder=None, plotting_filter_spectra=None,
+                          plotting_corrs_performs=None, plot_figure=True):
     """This function is used to carry out the filter spectrum analysis presented in "Retrieving Filter Spectra in CNN
-    for Explainable Sleep Stage Classification" given the trained MSA-CNN in various configurations. Specifically, it
-    uses the trained multivariate MSA-CNN for the ISRUC-S3 and Sleep-EDF-20 datasets to analyze the filter spectra, the
+    for Explainable Sleep Stage Classification" given the trained model in various configurations. Specifically, it
+    uses the trained multivariate model for the ISRUC-S3 and Sleep-EDF-20 datasets to analyze the filter spectra, the
     raw datasets to compute the between-class variance, and the univariate classification results to compare the filter
     spectra - between-class variance correlation with the classification performance. The results are visualized and
     saved in the figures folder."""
 
-    if args is None:
-        args = get_analysis_args()
-
     # Load the trained models
     model_full_states = {
-        'ISRUC': torch.load(os.path.join(args['results_folder'], args['models_folder'], args['model_ISRUC'])),
-        'sleep_edf_20': torch.load(os.path.join(args['results_folder'], args['models_folder'], args['model_sleep_edf_20']))
+        'ISRUC': torch.load(os.path.join(results_folder, models_folder, model_ISRUC)),
+        'sleep_edf_20': torch.load(os.path.join(results_folder, models_folder, model_sleep_edf_20))
     }
 
-    plotting_filter_spectra = PlottingFilterSpectra()
-    plotting_corrs_performs = PlottingCorrelationsPerformances(file_name_overview_univariate=args['file_name_overview_univariate'])
+    if plotting_filter_spectra is None:
+        plotting_filter_spectra = PlottingFilterSpectra(model_name=model_name)
+    else:
+        plotting_filter_spectra.set_model_name(model_name)
+    if plotting_corrs_performs is None:
+        plotting_corrs_performs = PlottingCorrelationsPerformances(
+            model_name=model_name, file_name_overview_univariate=file_name_overview_univariate)
+    else:
+        plotting_corrs_performs.model_name = model_name
+        plotting_corrs_performs.file_path = plotting_corrs_performs.get_file_path(file_name_overview_univariate)
 
     for idx_ds, (dataset, full_state) in enumerate(model_full_states.items()):
         print(f'Processing dataset {dataset}...')
@@ -415,6 +504,7 @@ def main_analysis_filters(args=None):
 
         # Get results for figure 1: filter spectra and between-class variances
         S_aggr = proc_filter_spectra.get_S_aggr()
+
         filter_freqs = proc_filter_spectra.get_filter_freqs()
         filter_spectra = proc_filter_spectra.get_individual_filter_spectra()
         filter_spectra_aggr = proc_filter_spectra.get_aggr_filter_spectra(filter_spectra, S_aggr)
@@ -426,12 +516,15 @@ def main_analysis_filters(args=None):
         corrs = proc_filter_spectra.get_correlations(filter_freqs, filter_spectra_aggr, dev_freqs, class_deviations,
                                                      proc_filter_spectra.S_aggr)
 
-        plotting_filter_spectra.plot_dataset(idx_ds, filter_freqs, filter_spectra_aggr, dev_freqs, class_deviations)
+        plotting_filter_spectra.plot_dataset(idx_ds, filter_freqs, filter_spectra_aggr, dev_freqs, class_deviations,
+                                             proc_filter_spectra.S_aggr)
         plotting_corrs_performs.plot_dataset(idx_ds, corrs)
 
-    plotting_filter_spectra.save()
-    plotting_corrs_performs.save()
-    plt.show()
+    if plot_figure:
+        plotting_filter_spectra.save()
+        plotting_corrs_performs.save()
+        plt.show()
+    return plotting_filter_spectra, plotting_corrs_performs
 
 
 if __name__ == '__main__':
