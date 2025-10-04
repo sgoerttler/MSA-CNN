@@ -311,9 +311,9 @@ class PlottingCorrelationsPerformances(object):
         return fig, axs
 
     def set_figure_formatting(self):
-        self.axs[0, 0].text(-0.21, 0.5, 'correlation (filter spectrum\nvs between-class variation)',
+        self.axs[0, 0].text(-0.27, 0.5, 'correlation (filter spectrum\nvs between-class variation)',
                             va='center', ha='center', rotation='vertical', transform=self.axs[0, 0].transAxes)
-        self.axs[1, 0].text(-0.21, 0.5, 'performance\n(classification acc.)',
+        self.axs[1, 0].text(-0.27, 0.5, 'performance\n(classification acc.)',
                             va='center', ha='center', rotation='vertical', transform=self.axs[1, 0].transAxes)
         self.fig.text(0.5, -0.0, 'channel', ha='center')
 
