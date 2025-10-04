@@ -1,6 +1,6 @@
 {
   "model_data_pairing": "element_wise",
-  "model": ["MSA_CNN_small","MSA_CNN_large"],
+  "model": ["MSA_CNN_large"],
   "model_config_MSA_CNN_small": {
     "out_channels_1": [8],
     "out_scales": [16],
@@ -37,7 +37,7 @@
     "num_heads": [4],
     "num_attention_layers": [2]
   },
-  "data": ["ISRUC","sleep_edf_20"],
+  "data": ["sleep_edf_20"],
   "data_config_ISRUC": {
     "classes": 5,
     "channel_selection": ["EEG/EOG/EMG"],

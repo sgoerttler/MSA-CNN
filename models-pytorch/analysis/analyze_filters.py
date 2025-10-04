@@ -302,7 +302,7 @@ class PlottingCorrelationsPerformances(object):
         return os.path.join(self.dir_results, self.dir_overview, file_name_overview_univariate)
 
     def get_figure(self):
-        width_ratio = 1.9
+        width_ratio = 1.25
         height_ratio = 1.3
         fig = plt.figure(figsize=(6.4, 5.8))
         gs = GridSpec(2, 2, figure=fig, width_ratios=[width_ratio, 1], height_ratios=[height_ratio, 1], wspace=0.18,

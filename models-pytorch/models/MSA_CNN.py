@@ -50,7 +50,6 @@ class MultiScaleConvolution(nn.Module):
             xi = x.clone()
             
             xi = F.avg_pool2d(xi, (1, scale))
-
             xi = self.convs1[idx_scale](xi)
             xi = activation(xi, self.config)
 
@@ -93,11 +92,11 @@ class ScaleIntegrationConvolution(nn.Module):
     def forward(self, x):
         if self.config.get('multimodal_msm_conv2', False):
             x = x.permute(0, 2, 1, 3)
-        
+
         x = self.conv_scales(x)
         x = activation(x, self.config)
         x = self.dropout_scales(x)
-        
+
         if self.config.get('multimodal_msm_conv2', False):
             x = x.view(x.shape[0], self.config['num_channels'], self.config['out_scales'], -1)
             x = x.permute(0, 2, 1, 3).contiguous()
@@ -118,7 +117,7 @@ class MultiScaleModule(nn.Module):
 
     def forward(self, x):
         x = self.multi_scale_convolution(x)
-        if self.config.get('return_msm_conv1', False):
+        if self.config.get('return_conv1', False):
             return x  # optional: return for analysis
         return self.scale_integration_convolution(x)
 
@@ -243,7 +242,7 @@ class MSA_CNN(nn.Module):
             x = self.scaling_layer(x)
 
         x = self.msm(x)
-        if self.config.get('return_msm_conv1', False) or self.config.get('return_msm_conv2', False):
+        if self.config.get('return_conv1', False) or self.config.get('return_msm_conv2', False):
             return x  # optional: return for analysis
 
         x = self.spatial_layer(x)
