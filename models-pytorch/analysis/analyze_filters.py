@@ -182,7 +182,7 @@ class PlottingFilterSpectra(object):
         self.dataset_labels = {'ISRUC': 'ISRUC-S3', 'sleep_edf_20': 'Sleep-EDF-20'}
         self.color_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
 
-        self.fig, self.axs = plt.subplots(2, 2, figsize=(12, 5.5), gridspec_kw={'hspace': 0.1, 'wspace': 0.1}, )
+        self.fig, self.axs = plt.subplots(2, 2, figsize=(12, 5.5), gridspec_kw={'hspace': 0.1, 'wspace': 0.1})
         self.figure_formatting()
 
     def set_model_name(self, model_name):
@@ -213,8 +213,8 @@ class PlottingFilterSpectra(object):
 
     def plot_dataset(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr):
         self.plot_filter_spectra(idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr)
-        self.plot_eeg_waves(max(filter_freqs))
-        self.set_limits(idx_ds, max(filter_freqs))
+        self.plot_eeg_waves()
+        self.set_limits(idx_ds, 48)  # max filter frequency of both models is 48 Hz
         self.set_titles(idx_ds)
 
     def plot_filter_spectra(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr):
@@ -240,7 +240,7 @@ class PlottingFilterSpectra(object):
             class_deviations[idx_channel, :][mask_freqs_low_freq]),
                                               color=self.color_cycle[idcs_color[0]], linestyle='--')
 
-    def plot_eeg_waves(self, max_filter_freqs):
+    def plot_eeg_waves(self):
         for idx_ds in range(2):
             self.axs[self.idx_model, idx_ds].axvspan(0.5, 4, ymin=-0.1, ymax=9, facecolor='darkviolet', alpha=0.05,
                                                      label='Delta', edgecolor='grey')
@@ -250,7 +250,7 @@ class PlottingFilterSpectra(object):
                                                      label='Alpha', edgecolor='grey')
             self.axs[self.idx_model, idx_ds].axvspan(12, 30, ymin=-0.1, ymax=9, facecolor='orange', alpha=0.05,
                                                      label='Beta', edgecolor='none')
-            self.axs[self.idx_model, idx_ds].axvspan(30, max_filter_freqs - 0.1, ymin=-0.1, ymax=9, facecolor='tomato',
+            self.axs[self.idx_model, idx_ds].axvspan(30, 45, ymin=-0.1, ymax=9, facecolor='tomato',
                                                      alpha=0.05, label='Gamma', edgecolor='grey')
 
             self.axs[self.idx_model, idx_ds].text(0.5 + (4 - 0.5) / 2, 0.15, 'δ', color='darkviolet', ha='center',
@@ -261,7 +261,7 @@ class PlottingFilterSpectra(object):
                                                   va='center')
             self.axs[self.idx_model, idx_ds].text(12 + (30 - 12) / 2, 0.15, 'β', color='orange', ha='center',
                                                   va='center')
-            self.axs[self.idx_model, idx_ds].text(30 + (max_filter_freqs - 30) / 2, 0.15, 'γ', color='tomato',
+            self.axs[self.idx_model, idx_ds].text(30 + (45 - 30) / 2, 0.15, 'γ', color='tomato',
                                                   ha='center', va='center')
 
     def set_limits(self, idx_ds, max_filter_freqs):
