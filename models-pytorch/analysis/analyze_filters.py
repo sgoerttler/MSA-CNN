@@ -207,9 +207,9 @@ class PlottingFilterSpectra(object):
         legend_colors = ['tab:blue', 'tab:blue', transparent_to_opaque('darkviolet', 0.1)]
         legend_ls = ['-', '--', '']
         add_legend(legend_colors, legend_ls, ['filter spectrum', 'betw.-class var.', 'F3-A2'],
-                   self.axs[0, 0], loc='upper left', bbox_to_anchor=(0.025, 1))
+                   self.axs[0, 0], loc='upper right', bbox_to_anchor=(0.975, 1))
         add_legend(legend_colors, legend_ls, ['filter spectrum', 'betw.-class var.', 'Fpz-Cz'],
-                   self.axs[0, 1], loc='upper left', bbox_to_anchor=(0.025, 1))
+                   self.axs[0, 1], loc='upper right', bbox_to_anchor=(0.975, 1))
 
     def plot_dataset(self, idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr):
         self.plot_filter_spectra(idx_ds, filter_freqs, filter_spectra, freqs, class_deviations, S_aggr)
