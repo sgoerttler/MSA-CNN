@@ -187,14 +187,14 @@ class PlottingFilterSpectra(object):
 
     def set_model_name(self, model_name):
         self.model_name = model_name
-        self.idx_model = ['MSA_CNN', 'EEGNet'].index(model_name)
+        self.idx_model = ['EEGNet', 'MSA_CNN'].index(model_name)
 
     def figure_formatting(self):
         props = dict(facecolor=transparent_to_opaque('slategrey', alpha=0.025), boxstyle='round,pad=0.4')
 
         for idx_ds in range(2):
             self.axs[1, idx_ds].set_xlabel('frequency (Hz)')
-            for idx_model, model_name in enumerate(['MSA-CNN', 'EEGNet']):
+            for idx_model, model_name in enumerate(['EEGNet', 'MSA-CNN']):
                 self.axs[0, idx_ds].set_xticklabels([])
                 if idx_ds == 0:
                     self.axs[idx_model, idx_ds].set_ylabel('rescaled spectrum')
@@ -325,7 +325,7 @@ class PlottingCorrelationsPerformances(object):
             self.set_titles(idx_ds)
 
         legend_ls = ['o', '*']
-        add_legend(['grey', 'grey'], legend_ls, ['MSA-CNN', 'EEGNet'], self.axs[0, 0],
+        add_legend(['grey', 'grey'], legend_ls, ['EEGNet', 'MSA-CNN'], self.axs[0, 0],
                    loc='lower left', s=[self.marker_o_s[ls_i] for ls_i in legend_ls])
 
     def plot_dataset(self, idx_ds, corrs_i):
@@ -334,9 +334,9 @@ class PlottingCorrelationsPerformances(object):
 
     def plot_correlations(self, idx_ds, corrs_i):
         if self.model_name == 'MSA_CNN':
-            marker = 'o'
-        elif self.model_name == 'EEGNet':
             marker = '*'
+        elif self.model_name == 'EEGNet':
+            marker = 'o'
         if idx_ds == 0:
             corrs_i_rearr = corrs_i[self.idcs_rearrange_ISRUC]
             self.axs[0, 0].scatter(np.arange(4), corrs_i_rearr[:4], color=self.color_cycle[0], marker=marker,
@@ -361,9 +361,9 @@ class PlottingCorrelationsPerformances(object):
 
     def plot_performance(self, idx_ds, corrs_i):
         if self.model_name == 'MSA_CNN':
-            marker = 'o'
-        elif self.model_name == 'EEGNet':
             marker = '*'
+        elif self.model_name == 'EEGNet':
+            marker = 'o'
 
         df_univariate = pd.read_csv(self.file_path, index_col=0)
         if df_univariate['model'].iloc[-1] == 'EEGNet':
